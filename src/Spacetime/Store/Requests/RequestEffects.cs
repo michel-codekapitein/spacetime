@@ -56,7 +56,7 @@ namespace Spacetime.Store.Requests
         {
             try
             {
-                var response = await _spacetime.Execute(action.Request, action.ResponseOptions);
+                var response = await _spacetime.Execute(action.Request);
                 dispatcher.Dispatch(new ExecuteRequestSuccessAction(action.Request.Id, response));
             }
             catch (Exception ex)

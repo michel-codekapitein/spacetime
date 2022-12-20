@@ -8,6 +8,7 @@
         public string Name { get; set; }
         public string URL { get; set; }
         public string RequestBody { get; set; }
+        public SpacetimeResponseOptions ResponseOptions { get; set; } = new();
         public SpacetimeResponse Response { get; set; }
         public List<QueryParamDto> QueryParams { get; set; } = new();
         public List<HeaderDto> Headers { get; set; } = new();

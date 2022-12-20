@@ -2,6 +2,7 @@
 
 @using Spacetime.Core.gRPC;
 @using Spacetime.Core.gRPC.Interfaces
+@using Newtonsoft.Json;
 
 @inject ISpacetimeService SpacetimeRestService
 @inject RequestService RequestService
@@ -9,6 +10,7 @@
 @inject IDispatcher Dispatcher
 @inject ILogger<RestView> Log
 @inject IState<RequestState> RequestState
+@inject DefaultTheme defaultTheme
 
 <style>
     /* there's a bug when switching to mudblazor for grid.
@@ -27,13 +29,11 @@
     <div class="grid gap-2 grid-cols-12 flex flex-col grow ml-2">
         <div class="lg:col-span-6 sm:col-span-full flex flex-col">
             <div class="flex flex-row shrink-0 gap-2 my-4">
-                <MudIconButton
-
-                    Icon="@(DrawerOpen ? Icons.Filled.ChevronLeft : Icons.Filled.ChevronRight)"
-                    OnClick="OnDrawerToggle"/>
+                <MudIconButton Icon="@(DrawerOpen ? Icons.Filled.ChevronLeft : Icons.Filled.ChevronRight)"
+                               OnClick="OnDrawerToggle" />
                 <MudSelect T="string" Margin="Margin.Dense" T="string" Value="Request.Method" Variant="Variant.Outlined" ValueChanged="OnMethodChange" Class="w-24">
-                    <MudSelectItem Value="@("GET")"/>
-                    <MudSelectItem Value="@("POST")"/>
+                    <MudSelectItem Value="@("GET")" />
+                    <MudSelectItem Value="@("POST")" />
                 </MudSelect>
                 <MudTextField Class="w-5/6"
                               Margin="Margin.Dense"
@@ -41,17 +41,17 @@
                               Placeholder="https://localhost:44301/api/tickets"
                               Variant="Variant.Outlined"
                               @onblur="Save"
-                              Adornment="Adornment.End" AdornmentIcon="@ExecuteIcon" OnAdornmentClick="Execute"/>
+                              Adornment="Adornment.End" AdornmentIcon="@ExecuteIcon" OnAdornmentClick="Execute" />
             </div>
             <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="flex grow">
                 <MudTabPanel Text="Body" Class="flex">
                     <Code @bind-Data="Request.RequestBody" Name="@RequestEditorName"></Code>
                 </MudTabPanel>
                 <MudTabPanel Text="Query">
-                    <QueryParams @bind-Query="Request.QueryParams"/>
+                    <QueryParams @bind-Query="Request.QueryParams" />
                 </MudTabPanel>
                 <MudTabPanel Text="Headers">
-                    <RequestHeaders @bind-Headers="@Request.Headers"/>
+                    <RequestHeaders @bind-Headers="@Request.Headers" />
                 </MudTabPanel>
             </MudTabs>
         </div>
@@ -62,8 +62,9 @@
                     <MudChip Color="Color.Default">@(Request.Response?.ElapsedMs)ms</MudChip>
                 </div>
                 <div class="pr-5">
-                    <MudIconButton Disabled="true" Size="Size.Small" Icon="@Icons.Filled.FormatPaint" OnClick="async () => {}"/>
-                    <MudIconButton Size="Size.Small" Icon="@Icons.Filled.Delete" OnClick="async () => { await OnDelete.InvokeAsync(Request); }"/>
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Filled.FormatPaint" OnClick="ToggleFormat"
+                                   Style="@(StyleForFormat())" />
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Filled.Delete" OnClick="async () => { await OnDelete.InvokeAsync(Request); }" />
                 </div>
             </div>
 
@@ -72,7 +73,7 @@
                     <Code Data="@Request.Response?.ResponseBody" Name="@ResponseEditorName"></Code>
                 </MudTabPanel>
                 <MudTabPanel Text="Headers">
-                    <HeadersPane Headers="@Request.Response?.Headers"/>
+                    <HeadersPane Headers="@Request.Response?.Headers" />
                 </MudTabPanel>
             </MudTabs>
         </div>
@@ -81,9 +82,8 @@
 else
 {
     <div class="mx-4 my-4">
-        <MudIconButton
-            Icon="@(DrawerOpen ? Icons.Filled.ChevronLeft : Icons.Filled.ChevronRight)"
-            OnClick="OnDrawerToggle"/>
+        <MudIconButton Icon="@(DrawerOpen ? Icons.Filled.ChevronLeft : Icons.Filled.ChevronRight)"
+                       OnClick="OnDrawerToggle" />
         Select a request or create a new one to get started.
     </div>
 }
@@ -94,7 +94,7 @@ else
 
     [Parameter]
     public EventCallback<SpacetimeRequest> OnDelete { get; set; }
-    
+
     [Parameter]
     public bool DrawerOpen { get; set; }
 
@@ -105,7 +105,6 @@ else
 
     private string ExecuteIcon => Request.Status != SpacetimeStatus.Active ? Icons.Filled.Send : @Icons.Filled.Refresh;
     private string ExecuteText => Request.Status != SpacetimeStatus.Active ? "Execute" : "Loading...";
-    private readonly ResponseOptions _options = new ResponseOptions(); 
 
     private void OnMethodChange(string method)
     {
@@ -127,7 +126,16 @@ else
         }
 
         Dispatcher.Dispatch(new ExecuteRequestAction(Request));
+    }
 
+    private void ToggleFormat()
+    {
+        Request.ResponseOptions.Pretty = !Request.ResponseOptions.Pretty;
+    }
 
+    private string StyleForFormat()
+    {
+        // Leave background as is when format is enabled.
+        return !Request.ResponseOptions.Pretty ? $"background:{defaultTheme.Swatch.ActionDisabledBackground};" : "";
     }
 }

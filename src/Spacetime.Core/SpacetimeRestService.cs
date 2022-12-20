@@ -12,8 +12,8 @@ namespace Spacetime.Core
         private readonly ILogger<SpacetimeRestService> _log;
         private readonly HttpClient _client;
         private readonly UrlBuilder _urlBuilder;
-        private readonly ResponseOptions _defaultResponseOptions = new ();
-        private readonly Dictionary<string, HttpMethod> _methods = new ()
+        private readonly ResponseOptions _defaultResponseOptions = new();
+        private readonly Dictionary<string, HttpMethod> _methods = new()
         {
             {"GET", HttpMethod.Get },
             {"POST", HttpMethod.Post }
@@ -22,9 +22,9 @@ namespace Spacetime.Core
         private readonly IFormatterFactory _formatter;
 
         public SpacetimeRestService(
-            ILogger<SpacetimeRestService> log, 
-            HttpClient client, 
-            UrlBuilder urlBuilder, 
+            ILogger<SpacetimeRestService> log,
+            HttpClient client,
+            UrlBuilder urlBuilder,
             IFormatterFactory formatter)
         {
             _log = log;
@@ -33,10 +33,8 @@ namespace Spacetime.Core
             _formatter = formatter;
         }
 
-        public async Task<SpacetimeResponse> Execute(SpacetimeRequest request, ResponseOptions options = null)
+        public async Task<SpacetimeResponse> Execute(SpacetimeRequest request)
         {
-            options ??= _defaultResponseOptions;
-
             _log.LogInformation("Executing request {id} with method {method}", request.Id, request.Method);
 
             var response = new SpacetimeResponse();
@@ -52,10 +50,14 @@ namespace Spacetime.Core
 
                 var responseJson = await httpResponse.Content.ReadAsStringAsync();
 
-                if (options.Pretty)
+                if (request.ResponseOptions.Pretty)
                 {
                     var formatter = _formatter.Get(GetFormatterType(httpResponse));
                     response.ResponseBody = formatter.Format(responseJson);
+                }
+                else
+                {
+                    response.ResponseBody = responseJson;
                 }
 
                 response.Headers = httpResponse.Headers.Select(p => new HeaderDto { Name = p.Key, Value = string.Join(';', p.Value) });
